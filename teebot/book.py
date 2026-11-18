@@ -83,7 +83,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--date", default=next_sunday(), help="DD-MM-YYYY (default: next Sunday)")
     parser.add_argument("--session", default="Morning", choices=["Morning", "Afternoon"])
-    parser.add_argument("--target", required=True, help='preferred tee time, e.g. "06:30 AM"')
+    parser.add_argument("--target", default="", help='preferred tee time, e.g. "06:30 AM"; nearest slots are tried first')
+    parser.add_argument("--order", default="", help='exact times to try, in order, e.g. "06:18 AM,06:25 AM"; '
+                                                    "only these times are tried")
     parser.add_argument("--earliest", default="", help='do not book before this, e.g. "06:04 AM"')
     parser.add_argument("--latest", default="", help='do not book after this, e.g. "07:15 AM"')
     parser.add_argument("--holes", default="1,10", help="starting holes in order of preference")
@@ -91,6 +93,9 @@ def main() -> int:
     parser.add_argument("--live", action="store_true", help="really hold and book (default is a rehearsal)")
     args = parser.parse_args()
     holes = [int(h) for h in args.holes.split(",")]
+    order = [minutes(t) for t in args.order.split(",") if t.strip()]
+    if bool(order) == bool(args.target):
+        parser.error("give either --target or --order")
     for label in filter(None, [args.target, args.earliest, args.latest]):
         parse_time(label)
 
@@ -106,7 +111,10 @@ def main() -> int:
     try:
         client.login(member_id, password)
         day = (client.slots_for_date(args.date).get("data")) or {}
-        candidates = pick_candidates(day, args.session, args.target, args.earliest, args.latest, holes)
+        candidates = pick_candidates(day, args.session, args.target or "12:00 PM", args.earliest, args.latest, holes)
+        if order:
+            candidates = [c for c in candidates if minutes(c["time"]) in order]
+            candidates.sort(key=lambda c: (order.index(minutes(c["time"])), holes.index(c["hole_no"])))
         if not candidates:
             print("No free member slots match those preferences.", file=sys.stderr)
             return 1

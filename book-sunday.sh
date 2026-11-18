@@ -10,10 +10,10 @@ if [ "$1" = "--rehearse" ]; then
     shift
 fi
 
-# Preferences: tee box 1, any slot from 6:04 to 6:39 AM, latest first.
+# Preferences: tee box 1, these times only, tried in this order.
 # shellcheck disable=SC2086
 exec .venv/bin/python -u -W ignore -m teebot.book \
     --session Morning \
-    --target "06:39 AM" --earliest "06:04 AM" --latest "06:39 AM" \
+    --order "06:18 AM,06:25 AM,06:39 AM,06:32 AM,06:11 AM,06:04 AM" \
     --holes 1 \
     $MODE "$@"
