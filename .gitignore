@@ -1,0 +1,9 @@
+# Secrets and anything captured from a logged-in session
+.env
+debug/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
