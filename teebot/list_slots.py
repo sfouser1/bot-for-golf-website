@@ -75,6 +75,10 @@ def main() -> int:
     except TngfError as err:
         print(f"Stopped: {err}", file=sys.stderr)
         return 1
+    finally:
+        closed = client.logout()
+        if closed:
+            print("Logged out: " + ", ".join(closed))
 
     if data.get("error_msg") or data.get("unauthorized"):
         print(f"Stopped: site said {data.get('error_msg') or 'unauthorized'}", file=sys.stderr)

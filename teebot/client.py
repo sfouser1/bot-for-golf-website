@@ -57,6 +57,7 @@ class TngfClient:
         self.http.headers["User-Agent"] = USER_AGENT
         self.session_token: Optional[str] = None
         self.user: dict = {}
+        self._portal_logout_fields: Optional[dict] = None
 
     # ---- member portal -------------------------------------------------
 
@@ -95,6 +96,12 @@ class TngfClient:
                 "Portal login was not accepted"
                 + (f": {message}" if message else " (still on the login page).")
             )
+        logout_form = soup.find("form", id="logoutForm")
+        self._portal_logout_fields = {
+            tag["name"]: tag.get("value", "")
+            for tag in (logout_form.find_all("input", attrs={"type": "hidden"}) if logout_form else [])
+            if tag.get("name")
+        }
         return resp.text
 
     def find_handoff(self, landing_html: str) -> dict:
@@ -180,6 +187,43 @@ class TngfClient:
     def login(self, member_id: str, password: str) -> None:
         landing = self.portal_login(member_id, password)
         self.booking_login(self.find_handoff(landing))
+
+    def logout(self) -> list:
+        """End the booking and portal sessions. Never raises; returns what was closed."""
+        closed = []
+        if self.session_token:
+            try:
+                resp = self.http.get(urljoin(BOOKING, "api/logout/"), headers=self.api_headers(), timeout=TIMEOUT)
+                closed.append(f"booking app (HTTP {resp.status_code})")
+            except requests.RequestException as err:
+                closed.append(f"booking app (failed: {type(err).__name__})")
+            self.session_token = None
+        if self._portal_logout_fields is not None:
+            try:
+                resp = self.http.post(
+                    urljoin(PORTAL, "Login/LogOff"),
+                    data=self._portal_logout_fields,
+                    headers={"Referer": PORTAL},
+                    timeout=TIMEOUT,
+                )
+                # The portal answers with a second form that the browser submits by itself.
+                follow_up = BeautifulSoup(resp.text, "html.parser").find("form")
+                if follow_up is not None and follow_up.get("action"):
+                    resp = self.http.post(
+                        urljoin(PORTAL, follow_up["action"]),
+                        data={
+                            tag["name"]: tag.get("value", "")
+                            for tag in follow_up.find_all("input", attrs={"type": "hidden"})
+                            if tag.get("name")
+                        },
+                        headers={"Referer": urljoin(PORTAL, "Login/LogOff")},
+                        timeout=TIMEOUT,
+                    )
+                closed.append(f"member portal (HTTP {resp.status_code})")
+            except requests.RequestException as err:
+                closed.append(f"member portal (failed: {type(err).__name__})")
+            self._portal_logout_fields = None
+        return closed
 
     def api_headers(self) -> dict:
         if not self.session_token:
