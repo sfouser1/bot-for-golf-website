@@ -83,11 +83,20 @@ def server_clock_offset(client: TngfClient) -> float:
     return server + 0.5 - (before + after) / 2
 
 
-def sleep_until(moment_ts: float, offset: float) -> None:
+def sleep_until(moment_ts: float, offset: float, opens_ts: float = 0.0) -> None:
+    """Sleep until a moment on the site's clock. With `opens_ts`, say every ten minutes how long is left."""
+    said = None
     while True:
-        remaining = moment_ts - (time.time() + offset)
+        now = time.time() + offset
+        remaining = moment_ts - now
         if remaining <= 0:
             return
+        if opens_ts:
+            tens = int((opens_ts - now) // 600)
+            if said is not None and tens < said:
+                stamp = datetime.fromtimestamp(now, IST).strftime("%H:%M")
+                print(f"[{stamp}] Still waiting: about {(tens + 1) * 10} minutes until the window opens.")
+            said = tens
         time.sleep(min(remaining, 30) if remaining > 1 else remaining)
 
 
@@ -244,7 +253,8 @@ def main() -> int:
             open_ts = opens_at.timestamp()
             if open_ts - (time.time() + offset) > LOGIN_LEAD + 30:
                 print(f"Waiting; will log in again {LOGIN_LEAD} seconds before the window opens.")
-                sleep_until(open_ts - LOGIN_LEAD, offset)
+                sleep_until(open_ts - LOGIN_LEAD, offset, open_ts)
+                print("Two minutes to go: logging in again.")
                 client = TngfClient()
                 client.login(member_id, password)
                 offset = server_clock_offset(client)

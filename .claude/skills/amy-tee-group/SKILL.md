@@ -1,6 +1,6 @@
 ---
-name: tee-group
-description: Browse the user's history of preferred groups at TNGF, pick players from it, and set a new preferred group on the club site. Use when the user says "show my group", "group history", "who is in my group", "set group", "change my group", "set preferred group", or types /tee-group.
+name: amy-tee-group
+description: Browse the user's history of preferred groups at TNGF, pick players from it, and set a new preferred group on the club site. Use when the user says "show my group", "group history", "who is in my group", "set group", "change my group", "set preferred group", or types /amy-tee-group.
 ---
 
 # Preferred group at TNGF
@@ -8,7 +8,7 @@ description: Browse the user's history of preferred groups at TNGF, pick players
 All commands run from the project folder with `.venv/bin/python -W ignore -m teebot.group ...`.
 Every group read from the site is saved in `saved-groups/` with a timestamp; that folder is the history.
 
-## Browse ("group history", "show my group", `/tee-group`)
+## Browse ("group history", "show my group", `/amy-tee-group`)
 
 1. Run `... -m teebot.group history`. It needs no login. It prints the saved groups, numbered with the most recent first, and every player seen in them.
 2. Show the user that list as printed. If they also want what is on the site right now, run `... -m teebot.group show` (this logs in and out).
