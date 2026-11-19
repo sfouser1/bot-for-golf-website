@@ -84,8 +84,17 @@ Notes:
 - Creating a group with `POST` when none exists is untested.
 - The booking confirm call does not use this group; it needs `players_ids` either way.
 
+## Confirmed by the live runs on 2026-11-19
+
+- Hold and confirm work from a script. A hold answers HTTP 200/201 with the slot's `url`.
+- **Confirm answers HTTP 200 with the slot body, not 202.** Treating 200 as a refusal made the bot release a slot it had just booked (12:17 PM, 09:00 run). The bot now accepts 200 or 202, checks the booking list, and never releases an accepted slot.
+- A hold was accepted about 0.2 s before the opening time by our clock estimate.
+- Before the window: HTTP 400 `{"message":"Booking not open yet. Please check when the booking opens"}`.
+- A taken slot answers with message `Blocked` or `Booked`.
+- Demand: all 13 morning tee box 1 member slots went within about 30 seconds of 08:45; the 12:17 to 12:52 PM afternoon slots on both tee boxes went within about 40 seconds of 09:00.
+- At 08:45 one hold request took about 9 seconds to answer. Requests now overlap (`teebot/race.py`).
+
 ## Still to confirm
 
-1. Whether the hold and confirm calls are accepted outside a browser.
 2. How long a held slot lasts and how long a session token lasts.
 3. Booking limits per member (per day or per week).
