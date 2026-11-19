@@ -94,6 +94,17 @@ Notes:
 - Demand: all 13 morning tee box 1 member slots went within about 30 seconds of 08:45; the 12:17 to 12:52 PM afternoon slots on both tee boxes went within about 40 seconds of 09:00.
 - At 08:45 one hold request took about 9 seconds to answer. Requests now overlap (`teebot/race.py`).
 
+## Buggy booking, mapped 2026-11-19
+
+- Page `/buggybooking?date=DD-MM-YYYY`; its `__NEXT_DATA__` has `confResponse.data` (one entry per session: `url`, `session_name`, `buggies` (21), `booking_opening_day` (-7), `booking_opening_time` (06:00 AM), `booking_cutoff_time` (09:00 AM morning, 01:00 PM afternoon)) and `bookingResponse.data` (every booking row for the day, with `status` `Booked`, `Cancelled` or `Not Available`).
+- Free buggies in a session = `buggies` minus the rows that are not `Cancelled`.
+- The site's form books in two requests: `POST api/buggy/booking/?nomail=yes` with `{date, configuration: <conf url>, course: <course url>, status: "Booked", booked_by_id}`, then `PATCH api/buggy/booking/<id>/` with `{hole_no: 1 or 10, booked_by_id}`. Leaving the form sends `PATCH .../<id>/?nomail=yes {status: "Cancelled"}`.
+- Cancel: `PATCH api/buggy/booking/<id>/` with `{status: "Cancelled"}`.
+- A member's own list: `GET api/buggy/booking/?status=Booked&date__gte=DD-MM-YYYY&booked_by__id=<id>`.
+- The club office places standing bookings for some members before the window opens.
+- Reading works (`teebot/buggy.py show`, `mine`). **The two booking requests and the cancel have not yet been run for real**; the answers for "not open yet", "full" and any per-member limit are unknown.
+- macOS will not let a launchd job read `~/Documents`, so scheduled jobs run from a copy in `~/.tngf-teebot` (`buggy-schedule.sh`).
+
 ## Still to confirm
 
 2. How long a held slot lasts and how long a session token lasts.
