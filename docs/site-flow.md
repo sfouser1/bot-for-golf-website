@@ -76,6 +76,14 @@ Notes:
 - Only one session per membership: a new login makes the earlier session's calls fail with HTTP 403. Two runs with the same membership cannot work side by side, and logging in through a browser ends a running bot's session.
 - A member's bookings for a date: `GET api/teetime/slots/?players__id=<id>&date=DD-MM-YYYY&status=Booked&sort_by=date` (paginated, `results`).
 
+## Preferred group, confirmed 2026-11-19
+
+- `GET api/teetime/preferredgroup/` returns a list with the logged-in member's one group: `url`, `member` (member URL), `players` (IDs, the member included) and `players_list` (id, username, names).
+- `PATCH api/teetime/preferredgroup/<id>/` with `{member: <member url>, players: [ids]}` replaces it and answers HTTP 202. The reply body still shows the old players; read the group again to check.
+- The site keeps one group and no history. `teebot/group.py` records each group it sees in `saved-groups/` (not committed, it holds other members' names).
+- Creating a group with `POST` when none exists is untested.
+- The booking confirm call does not use this group; it needs `players_ids` either way.
+
 ## Still to confirm
 
 1. Whether the hold and confirm calls are accepted outside a browser.
